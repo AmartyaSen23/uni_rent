@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniRent Essentials</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }
+        header { background-color: #007bff; color: white; padding: 1rem; text-align: center; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        .login-form { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 400px; margin: 2rem auto; }
+        input { width: 100%; padding: 0.5rem; margin: 0.5rem 0; }
+        button { background: #007bff; color: white; padding: 0.5rem; border: none; width: 100%; cursor: pointer; }
+        .item-card { background: white; padding: 1rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>UniRent Essentials</h1>
+        <p>Rent university essentials from peers – calculators, books, and more!</p>
+    </header>
+    <div class="container">
+        <section id="login-section">
+            <div class="login-form">
+                <h2>Login with University Credentials</h2>
+                <form id="login-form">
+                    <input type="email" id="email" placeholder="University Email (e.g., student@university.edu)" required>
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button type="submit">Login</button>
+                </form>
+                <p>New user? <a href="#register">Register as Borrower or Lender</a></p>
+            </div>
+        </section>
+        <section id="items-section" style="display: none;">
+            <h2>Available Items</h2>
+            <div class="item-card">
+                <h3>Scientific Calculator</h3>
+                <p>Brand new, perfect for exams. $2/day.</p>
+                <button>Rent Now</button>
+            </div>
+            <!-- More items dynamically loaded -->
+        </section>
+    </div>
+    <script>
+        // Basic JS for login simulation (replace with real auth)
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            if (email.includes('@university.edu')) {
+                alert('Login successful! Redirecting to dashboard.');
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('items-section').style.display = 'block';
+            } else {
+                alert('Invalid university email.');
+            }
+        });
+    </script>
+</body>
+</html>

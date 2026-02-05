@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusShare | Student Login</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            width: 380px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        }
+
+        h1 { color: #182848; margin-bottom: 5px; }
+        p.subtitle { color: #666; font-size: 14px; margin-bottom: 30px; }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus { border-color: #4b6cb7; outline: none; }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #4b6cb7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover { background-color: #182848; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none; /* Hidden by default */
+            padding: 10px;
+            background: #fde8e7;
+            border-radius: 5px;
+        }
+
+        .link { margin-top: 20px; font-size: 14px; color: #666; }
+        .link a { color: #4b6cb7; text-decoration: none; font-weight: bold; }
+        .link a:hover { text-decoration: underline; }
+        /* 🛡️ CAPTCHA STYLES */
+        .captcha-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+        .captcha-box {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 18px;
+            color: #182848;
+            letter-spacing: 2px;
+            background: #e9ecef;
+            padding: 8px 15px;
+            border-radius: 5px;
+            user-select: none;
+        }
+        .captcha-input {
+            width: 80px !important; /* Force width */
+            padding: 8px !important;
+            text-align: center;
+            margin: 0 !important;
+        }
+        .refresh-icon {
+            cursor: pointer;
+            font-size: 18px;
+            color: #666;
+            margin-left: 5px;
+            transition: transform 0.3s;
+        }
+        .refresh-icon:hover { transform: rotate(180deg); color: #4b6cb7; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Enter your credentials to access CampusShare</p>
+
+        <div class="input-group">
+            <label>University Email</label>
+            <input type="email" id="email" placeholder="e.g. name.123@lpu.in">
+        </div>
+
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        <div class="input-group">
+            <label>Security Check</label>
+            <div class="captcha-container">
+                <div class="captcha-box" id="captchaQuestion">...</div>
+                <div class="refresh-icon" onclick="generateCaptcha()" title="Get new code">🔄</div>
+                <input type="number" id="captchaAnswer" class="captcha-input" placeholder="?">
+            </div>
+        </div>
+        <div style="text-align:right; margin-bottom:15px;">
+            <a href="#" onclick="openForgotModal()" style="font-size:12px; color:#4b6cb7; text-decoration:none;">Forgot Password?</a>
+        </div>
+        <button onclick="login()" id="loginBtn">Secure Login</button>
+        
+        <div id="errorBox" class="error-msg"></div>
+
+        <div class="link">
+            Don't have an account? <a href="signup.html">Sign Up here</a>
+        </div>
+    </div>
+    <div id="forgotModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:white; padding:30px; border-radius:10px; width:300px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <div id="forgotStep1">
+                <h2 style="color:#333;">Reset Password</h2>
+                <p style="color:#666; font-size:13px;">Enter your email to receive a code.</p>
+                <input type="text" id="forgotEmail" placeholder="e.g. student@lpu.in" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+                <button onclick="requestForgotOtp()" style="width:100%; background:#4b6cb7; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">Send OTP</button>
+            </div>
+
+            <div id="forgotStep2" style="display:none;">
+                <h2 style="color:#333;">New Password</h2>
+                <p style="color:#666; font-size:13px;">Check email for OTP.</p>
+            
+                <input type="text" id="forgotOtp" placeholder="Enter OTP (6 digits)" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box; text-align:center; letter-spacing:2px;">
+                <input type="password" id="newPass" placeholder="New Password" style="width:100%; padding:10px; margin-bottom:15px; border:1px solid #ddd; border-radius:5px; box-sizing:border-box;">
+            
+                <button onclick="confirmReset()" style="width:100%; background:#28a745; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">Change Password</button>
+            </div>
+
+            <button onclick="closeForgotModal()" style="background:transparent; color:#666; border:none; margin-top:15px; cursor:pointer; text-decoration:underline;">Cancel</button>
+        </div>
+    </div>
+    <script>
+        let correctCaptcha = 0;
+
+        // 1. Generate Random Math Problem
+        function generateCaptcha() {
+            const num1 = Math.floor(Math.random() * 10) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            const isAddition = Math.random() > 0.5;
+
+            if (isAddition) {
+                correctCaptcha = num1 + num2;
+                document.getElementById("captchaQuestion").innerText = `${num1} + ${num2} =`;
+            } else {
+                const large = Math.max(num1, num2);
+                const small = Math.min(num1, num2);
+                correctCaptcha = large - small;
+                document.getElementById("captchaQuestion").innerText = `${large} - ${small} =`;
+            }
+            document.getElementById("captchaAnswer").value = "";
+        }
+
+        async function login() {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const userAns = document.getElementById("captchaAnswer").value; // Get User Answer
+            const btn = document.getElementById("loginBtn");
+            const errorBox = document.getElementById("errorBox");
+
+            // Reset Error
+            showError("", false); // Hide error box
+            
+            if (!email || !password) {
+                showError("⚠️ Please fill in all fields.");
+                return;
+            }
+
+            // 🛡️ CAPTCHA CHECK
+            if (parseInt(userAns) !== correctCaptcha) {
+                showError("❌ Incorrect Captcha. Please try again.");
+                generateCaptcha(); // Reset to prevent spam
+                return;
+            }
+
+            if (!email.endsWith("@lpu.in")) {
+                showError("❌ Access Denied: Please use your official @lpu.in email.");
+                return;
+            }
+
+            // 2. UI Loading State
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch("http://localhost:8080/api/auth/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                // Inside your fetch().then() block in login.html:
+
+                if (res.ok) {
+                    const data = await res.json(); // Use .json() now!
+    
+                    // 🛡️ SAVE TOKEN
+                    localStorage.setItem("authToken", data.token);
+                    localStorage.setItem("userName", data.username);
+                    localStorage.setItem("userEmail", data.email); // Keep for display, but trust the token for actions
+    
+                    window.location.href = "options.html";
+                } else {
+                    const msg = await res.text();
+                    showError("❌ " + msg);
+                    btn.innerText = "Secure Login";
+                    btn.disabled = false;
+                    generateCaptcha(); // Reset captcha on fail
+                }
+            } catch (e) {
+                showError("🌐 Server Error. Is Backend running?");
+                btn.innerText = "Secure Login";
+                btn.disabled = false;
+            }
+        }
+
+        function showError(msg, show = true) {
+            const box = document.getElementById("errorBox");
+            box.innerText = msg;
+            box.style.display = show ? "block" : "none";
+        }
+
+        // Initialize on load
+        generateCaptcha();
+        // --- FORGOT PASSWORD LOGIC ---
+    function openForgotModal() {
+        document.getElementById("forgotModal").style.display = "flex";
+        document.getElementById("forgotStep1").style.display = "block";
+        document.getElementById("forgotStep2").style.display = "none";
+    }
+
+    function closeForgotModal() {
+        document.getElementById("forgotModal").style.display = "none";
+    }
+
+    async function requestForgotOtp() {
+        const email = document.getElementById("forgotEmail").value;
+        if(!email) return alert("Enter your email");
+
+        const btn = document.querySelector("#forgotStep1 button");
+        btn.innerText = "Sending...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch("http://localhost:8080/api/auth/forgot-password-request", {
+                method: "POST",
+                body: email // sending raw string
+            });
+
+            if(res.ok) {
+                // Move to Step 2
+                document.getElementById("forgotStep1").style.display = "none";
+                document.getElementById("forgotStep2").style.display = "block";
+            } else {
+                alert("Error: " + await res.text());
+            }
+        } catch(e) { console.error(e); }
+        finally { btn.innerText = "Send OTP"; btn.disabled = false; }
+    }
+
+    async function confirmReset() {
+        const email = document.getElementById("forgotEmail").value;
+        const otp = document.getElementById("forgotOtp").value;
+        const newPassword = document.getElementById("newPass").value;
+
+        if(!otp || !newPassword) return alert("Fill all fields");
+
+        const btn = document.querySelector("#forgotStep2 button");
+        btn.innerText = "Updating...";
+        btn.disabled = true;
+
+        try {
+            const res = await fetch("http://localhost:8080/api/auth/reset-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, otp, newPassword })
+            });
+
+            if(res.ok) {
+                alert("Success! Password changed. Please Login.");
+                closeForgotModal();
+            } else {
+                alert("Failed: " + await res.text());
+            }
+        } catch(e) { console.error(e); }
+        finally { btn.innerText = "Change Password"; btn.disabled = false; }
+    }
+    </script>
+</body>
+</html>
