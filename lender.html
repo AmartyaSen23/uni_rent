@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CampusShare | Lender Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f8; padding: 30px; }
+    h1 { color: #182848; }
+    .top-links a { margin-right: 15px; color: #4b6cb7; text-decoration: none; font-weight: bold; }
+    
+    .box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    
+    input { padding: 10px; margin-right: 10px; border: 1px solid #ccc; border-radius: 5px; width: 200px; }
+    
+    button { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
+    .add { background: #4b6cb7; }
+    .add:hover { background: #182848; }
+    .remove { background: #d9534f; margin-left: 10px;}
+    
+    .item-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+    }
+    .item-info { font-size: 16px; }
+    .price { color: #28a745; font-weight: bold; }
+    /* --- 🛑 DELETE MODAL STYLES --- */
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6); /* Dimmed Background */
+        backdrop-filter: blur(3px); /* Cool Blur Effect */
+        display: none; justify-content: center; align-items: center; z-index: 1000;
+    }
+    .modal-card {
+        background: white; width: 320px; padding: 30px; border-radius: 12px;
+        text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        animation: popIn 0.3s ease-out;
+    }
+    @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    
+    .icon-circle {
+        width: 60px; height: 60px; background: #fde8e7; color: #d9534f;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 30px; margin: 0 auto 15px;
+    }
+    .danger-btn {
+        background: #d9534f; color: white; border: none; padding: 12px; width: 100%;
+        border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px;
+    }
+    .danger-btn:hover { background: #c9302c; }
+    .cancel-btn {
+        background: transparent; color: #777; border: none; margin-top: 10px;
+        cursor: pointer; font-size: 13px; text-decoration: underline;
+    }
+    .otp-input {
+        width: 100%; padding: 12px; font-size: 18px; text-align: center;
+        letter-spacing: 5px; border: 1px solid #ddd; border-radius: 8px; margin: 15px 0;
+        box-sizing: border-box;
+    }
+  </style>
+  <script src="utils.js"></script>
+</head>
+<body>
+
+  <div class="top-links">
+    <a href="options.html">← Back</a>
+    <a href="#" onclick="logout()">Log out</a>
+  </div>
+
+  <h1>Lender Dashboard</h1>
+  <div style="margin-bottom: 20px;">
+    <p id="userNameDisplay" style="font-size: 18px; color: #182848; margin-bottom: 25px;">Welcome!</p>
+    <span id="userEmailDisplay" style="color: gray; font-size: 14px; letter-spacing: 1px;"></span>
+  </div>
+
+  <div class="box" style="background: white; border-top: 5px solid #11998e;">
+    <h3>💸 Payout Settings</h3>
+    
+    <div id="setupSection" style="display:none; padding:15px; background:#fff3cd; border:1px solid #ffeeba; border-radius:5px;">
+        <strong>⚠️ Action Required:</strong> To receive automated payouts, link your UPI.
+        <div style="margin-top:10px; display:flex; gap:10px;">
+            <input type="text" id="upiInput" placeholder="e.g. 9876543210@paytm" style="flex:1; padding:8px;">
+            <button onclick="saveUpi()" style="background:#11998e; color:white; border:none; padding:8px 15px; cursor:pointer;">Link Account</button>
+        </div>
+    </div>
+
+    <div id="activeSection" style="display:none; margin-top:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <span style="color:gray; font-size:12px;">Linked Account</span><br>
+                <strong id="displayUpi" style="font-size:18px; color:#333;">...</strong>
+                <span style="color:green; font-size:12px;">✅ Verified</span>
+                <span onclick="editUpi()" style="cursor:pointer; margin-left:10px; font-size:12px; color:#4b6cb7;">✏️ Edit</span>
+            </div>
+            <div style="text-align:right;">
+                <span style="color:gray; font-size:12px;">Total Earned</span><br>
+                <span id="walletBalance" style="font-size:24px; font-weight:bold; color:#28a745;">₹0.0</span>
+            </div>
+        </div>
+        <div style="margin-top:20px; border-top:1px solid #eee; padding-top:10px; text-align:right;">
+            <span onclick="deleteAccount()" style="color:#d9534f; font-size:12px; font-weight:bold; cursor:pointer;">⚠️ Delete Account</span>
+        </div>
+        <p style="font-size:11px; color:gray; margin-top:10px;">*Payments are automatically split and transferred to your UPI ID.</p>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>Add a New Item</h3>
+    
+    <div style="margin-bottom:15px; text-align:center;">
+        <img id="previewImg" src="" style="max-width:100px; display:none; border-radius:5px; border:1px solid #ddd; margin-bottom:10px;">
+        <input type="file" id="itemImage" accept="image/*" onchange="compressImage()" style="font-size:12px;">
+        <input type="hidden" id="base64Output"> </div>
+
+    <input id="itemName" type="text" placeholder="Item Name (e.g. Cycle)">
+    <input id="itemDesc" type="text" placeholder="Description (e.g. Red color)">
+    <input id="itemPrice" type="number" placeholder="Price/day (₹)">
+    <button class="add" onclick="addItem()">+ Add Item</button>
+  </div>
+
+  <div class="box">
+    <h3>Your Listed Items</h3>
+    <div id="itemsContainer">Loading items...</div>
+  </div>
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal-card">
+        
+        <div id="delStep1">
+            <div class="icon-circle">⚠️</div>
+            <h2 style="color:#333; margin:0 0 10px;">Delete Account?</h2>
+            <p style="color:#666; font-size:14px; margin-bottom:20px;">
+                This action is <strong>permanent</strong>.<br>
+                All your listed items, history, and earnings will be wiped forever.
+            </p>
+            <button onclick="requestDeleteOtpUI()" class="danger-btn">Send OTP to Confirm</button>
+            <button onclick="closeDeleteModal()" class="cancel-btn">Cancel</button>
+        </div>
+
+        <div id="delStep2" style="display:none;">
+            <div class="icon-circle">🔒</div>
+            <h2 style="color:#333; margin:0 0 10px;">Verify Identity</h2>
+            <p style="color:#666; font-size:13px; margin:0;">
+                Enter the code sent to your email.
+            </p>
+            
+            <input type="text" id="deleteOtpInput" class="otp-input" placeholder="000000" maxlength="6">
+            
+            <button onclick="confirmDeleteUI()" class="danger-btn" id="confirmDelBtn">🔥 Confirm Deletion</button>
+            <div id="delError" style="color:red; font-size:12px; margin-top:10px;"></div>
+            <button onclick="closeDeleteModal()" class="cancel-btn">Cancel</button>
+        </div>
+
+        <div id="delStep3" style="display:none;">
+            <div class="icon-circle">💔</div>
+            <h2>Goodbye!</h2>
+            <p style="color:#666;">Account deleted successfully.</p>
+            <p style="font-size:12px; color:#aaa;">Redirecting...</p>
+        </div>
+    </div>
+  </div>
+  <div id="editModal" class="modal-overlay">
+    <div class="modal-card" style="text-align: left;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <div class="icon-circle" style="background:#e3f2fd; color:#4b6cb7;">✏️</div>
+            <h2 style="color:#333; margin:0;">Edit Item</h2>
+        </div>
+
+        <input type="hidden" id="editItemId">
+        <div style="text-align:center; margin-bottom:15px;">
+            <label style="font-size:12px; font-weight:bold; color:#666; display:block; margin-bottom:5px;">Update Image (Optional)</label>
+            <img id="editPreviewImg" src="" style="width:80px; height:80px; object-fit:cover; border-radius:5px; border:1px solid #ddd; display:none; margin:0 auto 10px;">
+            <input type="file" id="editItemImage" accept="image/*" onchange="compressEditImage()" style="font-size:12px;">
+            <input type="hidden" id="editBase64Output">
+        </div>
+        <label style="font-size:12px; font-weight:bold; color:#666;">Item Name</label>
+        <input type="text" id="editItemName" style="width:100%; margin-bottom:15px; box-sizing:border-box;">
+
+        <label style="font-size:12px; font-weight:bold; color:#666;">Description</label>
+        <input type="text" id="editItemDesc" style="width:100%; margin-bottom:15px; box-sizing:border-box;">
+
+        <label style="font-size:12px; font-weight:bold; color:#666;">Price per Day (₹)</label>
+        <input type="number" id="editItemPrice" style="width:100%; margin-bottom:20px; box-sizing:border-box;">
+
+        <button onclick="submitEdit()" class="add" style="width:100%; margin:0;">💾 Save Changes</button>
+        <button onclick="closeEditModal()" class="cancel-btn" style="width:100%;">Cancel</button>
+    </div>
+  </div>
+  <script>
+    // 1. Get the current user from Login
+    // --- 🎭 MASKING HELPERS ---
+    function maskUpi(upi) {
+        if (!upi || upi.length <= 4) return upi;
+        return upi.substring(0, 4) + "*".repeat(upi.length - 4);
+    }
+
+    function maskEmail(email) {
+        if (!email) return "";
+        // Finds the first dot. E.g., "amartya.12417174@lpu.in" -> "amartya."
+        const firstDotIndex = email.indexOf("."); 
+        if (firstDotIndex > 0 && firstDotIndex < email.indexOf("@")) {
+            const visiblePart = email.substring(0, firstDotIndex + 1);
+            return visiblePart + "*".repeat(email.length - visiblePart.length);
+        }
+        // Fallback for emails without dots (e.g. "amar@lpu.in" -> "amar****")
+        const visible = email.substring(0, 4);
+        return visible + "*".repeat(email.length - 4);
+    }
+
+    // --- 👤 1. GET USER DATA ---
+    const currentUserEmail = localStorage.getItem("userEmail");
+    const currentUserName = localStorage.getItem("userName") || "Lender"; // Fallback if name is missing
+
+    if (!currentUserEmail) {
+        alert("You are not logged in!");
+        window.location.href = "index.html";
+    }
+
+    // Set Username and Masked Email in UI
+    document.getElementById("userNameDisplay").innerText = "Welcome, " + currentUserName + "!";
+    document.getElementById("userEmailDisplay").innerText = maskEmail(currentUserEmail);
+
+    // ... (Keep the rest of your code: loadItems, addItem, etc. below this point) ...
+
+    if (!currentUserEmail) {
+        alert("You are not logged in!");
+        window.location.href = "index.html";
+    }
+    document.getElementById("userEmailDisplay").innerText = currentUserEmail;
+
+    // 2. Load Items from Java Backend
+    async function loadItems() {
+        const container = document.getElementById("itemsContainer");
+        container.innerHTML = "Loading...";
+
+        try {
+            const response = await authFetch(`${API_BASE}/api/items/lender?email=${currentUserEmail}`);
+            const items = await response.json();
+
+            container.innerHTML = ""; // Clear "Loading..."
+
+            if (items.length === 0) {
+                container.innerHTML = "<p>No items listed yet.</p>";
+                return;
+            }
+
+            items.forEach(item => {
+                const itemDiv = document.createElement("div");
+                itemDiv.className = "item-row";
+                
+                // 🎨 1. GET ICON
+                const icon = getIcon(item.name);
+                // --- STATUS LOGIC ---
+                let statusHtml = "";
+                let actionHtml = "";
+                
+                // 🆕 NEW: REQUESTED STATE (Approval Logic)
+                if (item.status === "REQUESTED") {
+                    statusHtml = `<span style="color:#007bff; font-weight:bold;">🔔 REQUEST RECEIVED</span>`;
+                    
+                    // Create a unique ID to show borrower rating later
+                    const borrowerRatingId = "b-rate-" + item.id;
+                    fetchRating(item.borrowerEmail, borrowerRatingId); // Reusing your existing fetchRating function!
+
+                    // REPLACE the actionHtml for REQUESTED with this:
+                    actionHtml = `
+                        <div style="background:#e3f2fd; padding:10px; margin-top:5px; border:1px solid #90caf9; border-radius:5px;">
+                            <strong>Request from:</strong> ${escapeHtml(item.borrowerName)}<br>
+                            <strong>LPU Email: </strong> ${escapeHtml(item.borrowerEmail)}<br>
+                            <span style="font-size:12px; color:gray;">(Approve to see contact info)</span>
+
+                            <div style="margin-top:8px; display:flex; gap:5px;">
+                                <button onclick="handleRequest('${item.id}', 'approve')" style="background:#28a745; ...">✅ Approve</button>
+                                <button onclick="handleRequest('${item.id}', 'reject')" style="background:#dc3545; ...">❌ Reject</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                else if (item.status === "PENDING") {
+                    statusHtml = `<span style="color:orange; font-weight:bold;">WAITING FOR PICKUP</span>`;
+                    actionHtml = `
+                        <div style="background:#fff3cd; padding:10px; border:1px solid orange; border-radius:5px;">
+                            Borrower: <strong>${escapeHtml(item.borrowerName)}</strong><br>
+                            <strong>Borrower Contact: </strong><br>
+                            📞 <a href="tel:${escapeHtml(item.borrowerPhone)}" style="font-weight:bold; color:#007bff;text-decoration: none;">${item.borrowerPhone || "Not Provided"}</a>
+                            <br><br>
+                            Handshake Code: <strong style="font-size:18px;">${escapeHtml(item.passkey)}</strong>
+                            <div style="margin-top:15px; border-top:1px solid #faebcc; padding-top:10px;">
+                                <button onclick="relistItem('${item.id}')" style="background:white; border:1px solid #d9534f; color:#d9534f; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px; width:100%;">
+                                    🚫 Ghosted? Cancel & Relist
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } 
+                else if (item.status === "RENTED") {
+                    // ... (Keep your existing RENTED logic)
+                    statusHtml = `<span style="color:red; font-weight:bold;">RENTED OUT</span>`;
+                    actionHtml = `
+                            <div style="margin:10px 0; color:#555; font-size:13px;">
+                                Borrower: <strong>${escapeHtml(item.borrowerName)}</strong><br>
+                                📞 <a href="tel:${escapeHtml(item.borrowerPhone)}" style="font-weight:bold; color:#007bff;text-decoration: none;">${escapeHtml(item.lenderPhone || "Not Provided")}</a>
+                            </div><br>
+                            <div style="background:#e8f5e9; padding:5px; margin-top:5px; border:1px solid green; border-radius:5px;">
+                                Return Code: <strong>${escapeHtml(item.returnPasskey)}</strong>
+                            </div>
+                        `;
+                }
+                else if (item.status === "REJECTED") {
+                    statusHtml = `<span style="color:gray; font-weight:bold;">⛔ REJECTED (Waiting for borrower to dismiss)</span>`;
+                    actionHtml = `
+                        <div style="margin:10px 0; color:#555; font-size:13px;">
+                            Borrower: <strong>${escapeHtml(item.borrowerName)}</strong><br>
+                            📞 <a href="tel:${escapeHtml(item.borrowerPhone)}" style="font-weight:bold; color:#007bff;text-decoration: none;">${escapeHtml(item.lenderPhone || "Not Provided")}</a>
+                        </div><br>
+                        <div style="background:#f8f9fa; padding:10px; border:1px solid #ddd; border-radius:5px; color:#666;">
+                            Waiting for borrower to dismiss...
+                            
+                            <div style="margin-top:10px;">
+                                <button onclick="relistItem('${item.id}')" style="background:#6c757d; border:none; color:white; padding:8px 12px; border-radius:4px; cursor:pointer; width:100%;">
+                                    🔄 Stuck? Force Relist
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                // ... inside loadItems loop ...
+                // 🆕 CASE: BORROWER CANCELLED
+                else if (item.status === "CANCELLED_BY_BORROWER") {
+                    statusHtml = `<span style="color:#d9534f; font-weight:bold;">🚫 CANCELLED</span>`;
+                    actionHtml = `
+                        <div style="background:#f8d7da; padding:10px; margin-top:5px; border:1px solid #f5c6cb; border-radius:5px;">
+                            <strong>Alert:</strong> The borrower (${escapeHtml(item.borrowerEmail)}) changed their mind and cancelled the pickup.
+                            <br><br>
+                            <button onclick="relistItem('${escapeHtml(item.id)}')" style="background:#d9534f; color:white; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; width:100%;">
+                                🔄 Dismiss & Relist Item
+                            </button>
+                        </div>
+                    `;
+                }
+                else {
+                    statusHtml = `<span style="color:green; font-weight:bold;">AVAILABLE</span>`;
+                }
+
+                // --- RENDER HTML (With Emoji Layout) ---
+                itemDiv.innerHTML = `
+                    <div style="display:flex; align-items:flex-start; width: 100%;">
+                        <div style="font-size:40px; margin-right:15px; min-width:50px;">${icon}</div>
+                        
+                        <div class="item-info" style="width: 100%;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span><strong>${escapeHtml(item.name)}</strong> (${escapeHtml(item.description)})</span>
+                                <span style="color:#28a745; font-weight:bold;">₹${escapeHtml(item.pricePerDay)}/day</span>
+                            </div>
+                            <div style="margin-top:5px;">Status: ${statusHtml}</div>
+                            ${actionHtml}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-left: 15px; display:flex; gap:5px;">
+                        ${item.status !== "RENTED" ? 
+                            `
+                            <button onclick="openEditModal('${escapeHtml(item.id)}', '${escapeHtml(item.name)}', '${escapeHtml(item.description)}', '${escapeHtml(item.pricePerDay)}', '${escapeHtml(item.imageBase64 || "")}')" 
+                                    style="background:#f0ad4e; color:white; border:none; border-radius:5px; padding:8px 12px; font-weight:bold; cursor:pointer;">
+                                Edit
+                            </button>
+                            <button class="remove" onclick="deleteItem('${escapeHtml(item.id)}')">Remove</button>
+                            ` : 
+                            `<button disabled style="background:#ccc; cursor:not-allowed; padding:8px 12px; border:none; border-radius:5px; color:white;">Locked</button>`
+                        }
+                    </div>
+                `;
+
+                // ✅ RESTORED MISSING LINES (To ensure alignment is perfect)
+                itemDiv.style.display = "flex";
+                itemDiv.style.justifyContent = "space-between";
+                itemDiv.style.alignItems = "flex-start";
+
+                container.appendChild(itemDiv);
+            });
+
+        } catch (error) {
+            console.error("Load items failed:", error);
+            container.innerHTML = "<p style='color:red'>Failed to load items. Check console & network tab.</p>";
+        }
+
+    }
+    // 3. Add Item to Backend (Secured with Token)
+    async function addItem() {
+        const token = localStorage.getItem("authToken"); 
+        
+        const name = document.getElementById("itemName").value;
+        const desc = document.getElementById("itemDesc").value;
+        const price = document.getElementById("itemPrice").value;
+        const image = document.getElementById("base64Output").value;
+
+        if (!name || !price) return alert("Fill Name and Price");
+
+        // 1. Define Object FIRST (Before sending!)
+        const newItem = {
+            name: name,
+            description: desc,
+            pricePerDay: parseFloat(price),
+            imageBase64: image
+        };
+
+        const btn = document.querySelector(".add");
+        btn.innerText = "Adding...";
+        btn.disabled = true;
+
+        try {
+            // 2. Single Fetch Call with Token
+            const response = await authFetch(`${API_BASE}/api/items/add`, {
+                method: "POST",
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + token // 🛡️ SECURE HEADER
+                },
+                body: JSON.stringify(newItem)
+            });
+
+            if (response.ok) {
+                alert("Item Added Successfully! 🚀");
+                
+                // Clear inputs
+                document.getElementById("itemName").value = "";
+                document.getElementById("itemDesc").value = "";
+                document.getElementById("itemPrice").value = "";
+                document.getElementById("base64Output").value = "";
+                document.getElementById("previewImg").style.display = "none";
+                
+                loadItems();
+            } else {
+                alert("Failed: " + await response.text());
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error connecting to server");
+        } finally {
+            btn.innerText = "+ Add Item";
+            btn.disabled = false;
+        }
+    }
+
+    // 4. Delete Item (Bonus)
+    async function deleteItem(id) {
+        if(!confirm("Are you sure you want to remove this item?")) return;
+
+        try {
+            const response = await authFetch(`${API_BASE}/api/items/${id}`, {
+                method: "DELETE"
+            });
+            if (response.ok) {
+                loadItems(); // Refresh list
+            } else {
+                alert("Failed to delete");
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem("userEmail");
+        window.location.href = "index.html";
+    }
+
+    // Load items when page opens
+    loadItems();
+    // CHECK PAYOUT STATUS
+    async function checkPayoutStatus() {
+        // 1. Get Earnings
+        try {
+            const res = await authFetch(`${API_BASE}/api/users/earnings/${currentUserEmail}`);
+            const amount = await res.json();
+            // ✅ NEW (Rounds to 2 decimals)
+            document.getElementById("walletBalance").innerText = "₹" + Number(amount).toFixed(2);
+        } catch (e) {
+            console.error(e);
+            alert("Something went wrong while fetching your earnings. Please try again.");
+        }
+
+        // 2. Get UPI ID
+        try {
+            const res = await authFetch(`${API_BASE}/api/users/payout-method/${currentUserEmail}`);
+            if (res.ok) {
+                const upiId = await res.text();
+                if (upiId && upiId.length > 5) {
+                    // USER IS ONBOARDED
+                    document.getElementById("setupSection").style.display = "none";
+                    document.getElementById("activeSection").style.display = "block";
+                    document.getElementById("displayUpi").innerText = maskUpi(upiId);
+                } else {
+                    // USER NEEDS SETUP
+                    document.getElementById("setupSection").style.display = "block";
+                    document.getElementById("activeSection").style.display = "none";
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Something went wrong while fetching your UPI ID. Please try again.");
+        }
+    }
+
+    async function saveUpi() {
+        const upi = document.getElementById("upiInput").value;
+        if (!upi.includes("@")) return alert("Invalid UPI ID");
+
+        const res = await authFetch(`${API_BASE}/api/users/payout-method/${currentUserEmail}`, {
+            method: "POST",
+            body: upi
+        });
+
+        if (res.ok) {
+            alert("Success! Account Linked.");
+            checkPayoutStatus(); // Refresh UI
+        }
+    }
+
+    // Call this INSTEAD of loadWallet()
+    checkPayoutStatus();
+    // --- NEW: EDIT UPI ---
+    function editUpi() {
+        // 1. Hide the Display view
+        document.getElementById("activeSection").style.display = "none";
+        // 2. Show the Input view
+        document.getElementById("setupSection").style.display = "block";
+        // 3. Pre-fill the input with current ID
+        document.getElementById("upiInput").value = document.getElementById("displayUpi").innerText;
+    }
+
+    // 🛡️ SECURE DELETE ACCOUNT (Smart Version)
+    // --- 1. OPEN MODAL ---
+    function deleteAccount() {
+        document.getElementById("deleteModal").style.display = "flex";
+        // Reset steps
+        document.getElementById("delStep1").style.display = "block";
+        document.getElementById("delStep2").style.display = "none";
+        document.getElementById("delStep3").style.display = "none";
+        document.getElementById("deleteOtpInput").value = "";
+        document.getElementById("delError").innerText = "";
+    }
+
+    // --- 2. CLOSE MODAL ---
+    function closeDeleteModal() {
+        document.getElementById("deleteModal").style.display = "none";
+    }
+
+    // --- 3. REQUEST OTP (UI Version) ---
+    async function requestDeleteOtpUI() {
+        const email = localStorage.getItem("userEmail");
+        const btn = document.querySelector("#delStep1 .danger-btn");
+        
+        btn.innerText = "Sending...";
+        btn.disabled = true;
+
+        try {
+            const res = await authFetch(`${API_BASE}/api/users/request-delete-otp/${email}`, { method: "POST" });
+
+            if (res.ok) {
+                // Switch to Step 2
+                document.getElementById("delStep1").style.display = "none";
+                document.getElementById("delStep2").style.display = "block";
+                document.getElementById("deleteOtpInput").focus();
+            } else {
+                alert("Error sending OTP. Please try again.");
+                closeDeleteModal();
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Server Error");
+        } finally {
+            btn.innerText = "Send OTP to Confirm";
+            btn.disabled = false;
+        }
+    }
+
+    // --- 4. CONFIRM DELETE (UI Version) ---
+    async function confirmDeleteUI() {
+        const email = localStorage.getItem("userEmail");
+        const otp = document.getElementById("deleteOtpInput").value;
+        const btn = document.getElementById("confirmDelBtn");
+        const err = document.getElementById("delError");
+
+        if (otp.length < 6) {
+            err.innerText = "Please enter the full 6-digit code.";
+            return;
+        }
+
+        btn.innerText = "Deleting...";
+        btn.disabled = true;
+
+        try {
+            const res = await authFetch(`${API_BASE}/api/users/confirm-delete`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email, otp: otp })
+            });
+
+            if (res.ok) {
+                // Show Step 3 (Goodbye)
+                document.getElementById("delStep2").style.display = "none";
+                document.getElementById("delStep3").style.display = "block";
+                
+                // Clear Data & Redirect
+                localStorage.clear();
+                setTimeout(() => {
+                    window.location.href = "signup.html";
+                }, 2000);
+            } else {
+                err.innerText = "❌ " + await res.text();
+                btn.innerText = "🔥 Confirm Deletion";
+                btn.disabled = false;
+            }
+        } catch (e) {
+            err.innerText = "Connection Error.";
+            btn.innerText = "🔥 Confirm Deletion";
+            btn.disabled = false;
+        }
+    }
+    // --- HELPER: Get Emoji based on Item Name ---
+    function getIcon(name) {
+        name = name.toLowerCase();
+        if (name.includes("cycle") || name.includes("bike")) return "🚲";
+        if (name.includes("calc") || name.includes("math")) return "🧮";
+        if (name.includes("book") || name.includes("guide") || name.includes("notes")) return "📚";
+        if (name.includes("laptop") || name.includes("mac") || name.includes("pc")) return "💻";
+        if (name.includes("camera") || name.includes("dslr")) return "📸";
+        if (name.includes("guitar") || name.includes("music") || name.includes("keyboard")) return "🎸";
+        if (name.includes("game") || name.includes("ps5") || name.includes("xbox")) return "🎮";
+        if (name.includes("charger") || name.includes("adapter")) return "🔌";
+        if (name.includes("bag") || name.includes("pack")) return "🎒";
+        if (name.includes("kettle") || name.includes("induction")) return "☕";
+        if (name.includes("iron")) return "👕";
+        return "📦"; // Default Box icon
+    }
+
+    function closeEditModal() {
+        document.getElementById("editModal").style.display = "none";
+    }
+
+    // 📸 IMAGE COMPRESSOR
+    function compressImage() {
+        const file = document.getElementById("itemImage").files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function (event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function () {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                // Resize to max 300px width (Keeps DB small)
+                const maxWidth = 300;
+                const scale = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Convert to Base64 String
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                document.getElementById("base64Output").value = dataUrl;
+                
+                // Show Preview
+                document.getElementById("previewImg").src = dataUrl;
+                document.getElementById("previewImg").style.display = "inline-block";
+            }
+        }
+    }
+    // 1. 📸 COMPRESSOR FOR EDIT MODAL
+    function compressEditImage() {
+        const file = document.getElementById("editItemImage").files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function (event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function () {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                const maxWidth = 300; // Keep it small
+                const scale = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+                document.getElementById("editBase64Output").value = dataUrl;
+                
+                // Show Preview
+                document.getElementById("editPreviewImg").src = dataUrl;
+                document.getElementById("editPreviewImg").style.display = "block";
+            }
+        }
+    }
+
+    // 2. ✏️ OPEN MODAL (Now accepts Image Data)
+    // Update your loadItems loop to pass the image data too!
+    // Example call: openEditModal('id', 'name', 'desc', 'price', 'imageBase64')
+    function openEditModal(id, name, desc, price, currentImage) {
+        document.getElementById("editModal").style.display = "flex";
+        
+        document.getElementById("editItemId").value = id;
+        document.getElementById("editItemName").value = name;
+        document.getElementById("editItemDesc").value = desc;
+        document.getElementById("editItemPrice").value = price;
+        
+        // Reset Image Input
+        document.getElementById("editItemImage").value = "";
+        document.getElementById("editBase64Output").value = "";
+
+        // Show Current Image if exists
+        const preview = document.getElementById("editPreviewImg");
+        if (currentImage && currentImage.length > 50) {
+            preview.src = currentImage;
+            preview.style.display = "block";
+        } else {
+            preview.style.display = "none";
+        }
+    }
+
+    // 3. 💾 SUBMIT EDIT (Sends Image)
+    async function submitEdit() {
+        const id = document.getElementById("editItemId").value;
+        const name = document.getElementById("editItemName").value;
+        const desc = document.getElementById("editItemDesc").value;
+        const price = document.getElementById("editItemPrice").value;
+        const newImage = document.getElementById("editBase64Output").value; // Get new image
+
+        if(!name || !price) return alert("Name/Price required");
+
+        const payload = { 
+            name, 
+            description: desc, 
+            pricePerDay: parseFloat(price)
+        };
+
+        // Only send image if user actually selected a new one
+        if (newImage && newImage.length > 0) {
+            payload.imageBase64 = newImage;
+        }
+
+        const btn = document.querySelector("#editModal .add");
+        btn.innerText = "Saving...";
+        btn.disabled = true;
+
+        try {
+            const res = await authFetch(`${API_BASE}/api/items/update/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert("Updated! ✅");
+                closeEditModal();
+                loadItems();
+            } else {
+                alert("Error: " + await res.text());
+            }
+        } catch (e) { console.error(e); } 
+        finally { btn.innerText = "💾 Save Changes"; btn.disabled = false; }
+    }
+    async function handleRequest(itemId, action) {
+        if(!confirm(`Are you sure you want to ${action} this request?`)) return;
+        
+        const endpoint = action === 'approve' ? 'approve' : 'reject';
+        await authFetch(`${API_BASE}/api/items/${endpoint}/${itemId}`, { method: "POST" });
+        loadItems(); // Refresh
+    }
+    // FETCH RATING (For Borrower Rep)
+    async function fetchRating(email, elementId) {
+        try {
+            const res = await authFetch(`${API_BASE}/api/users/rating/${email}`);
+            const rating = await res.json();
+            document.getElementById(elementId).innerText = "⭐ " + rating.toFixed(1);
+        } catch(e) {}
+    }
+    async function relistItem(itemId) {
+        const res = await authFetch(`${API_BASE}/api/items/relist/${itemId}`, { method: "POST" });
+        if(res.ok) {
+            alert("Item is back on the market! 📢");
+            loadItems();
+        }
+    }
+  </script>
+
+</body>
+</html>
