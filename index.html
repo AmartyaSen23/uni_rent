@@ -286,9 +286,13 @@
         btn.disabled = true;
 
         try {
+            // 🟢 CORRECTED FETCH REQUEST
             const res = await fetch(`${API_BASE}/api/auth/forgot-password-request`, {
                 method: "POST",
-                body: email // sending raw string
+                headers: { 
+                    "Content-Type": "application/json" // <--- 1. Add Header
+                },
+                body: JSON.stringify({ "email": email }) // <--- 2. Wrap email in JSON
             });
 
             if(res.ok) {
@@ -314,6 +318,7 @@
         btn.disabled = true;
 
         try {
+            // This part of your code is ALREADY CORRECT:
             const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -331,4 +336,5 @@
     }
     </script>
 </body>
+
 </html>
