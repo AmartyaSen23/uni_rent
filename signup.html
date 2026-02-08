@@ -154,9 +154,13 @@
             status.innerText = "";
 
             try {
+                // 🟢 CORRECTED FETCH REQUEST
                 const res = await fetch(`${API_URL}/send-signup-otp`, {
                     method: "POST",
-                    body: email
+                    headers: { 
+                        "Content-Type": "application/json" // <--- 1. Tell Server: "I am sending JSON"
+                    },
+                    body: JSON.stringify({ "email": email }) // <--- 2. Wrap email in JSON format
                 });
 
                 if (res.ok) {
@@ -270,4 +274,5 @@
         }
     </script>
 </body>
+
 </html>
