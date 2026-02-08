@@ -307,7 +307,8 @@
         btn.disabled = true;
 
         try {
-            const res = await authFetch("http://localhost:8080/api/users/confirm-delete", {
+            // Use backticks ` ` so you can put the variable inside
+            const res = await authFetch(`${API_BASE}/api/users/confirm-delete`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: email, otp: otp })
@@ -377,7 +378,7 @@
         const stars = prompt(`Rate lender ${email} (1-5 stars):`);
         if(!stars || stars < 1 || stars > 5) return;
         
-        await authFetch("http://localhost:8080/api/users/rate", {
+        await authFetch(`${API_BASE}/api/users/rate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email: email, stars: parseInt(stars) })

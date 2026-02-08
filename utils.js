@@ -1,7 +1,7 @@
-const API_BASE = 
+const API_BASE =
   ["localhost", "127.0.0.1"].includes(window.location.hostname)
-  ? "http://localhost:8080"  // 🏠 Testing on Laptop
-  : "https://campusshare-backend.onrender.com"; // ☁️ LIVE on the Internet
+    ? "http://localhost:8080"
+    : "https://campusshare-backend.onrender.com";
 
 // 1. JWT Wrapper (Fixed: Uses native 'fetch' internally)
 async function authFetch(url, options = {}) {
@@ -44,5 +44,4 @@ function getIcon(name) {
     name = name.toLowerCase();
     if (name.includes("cycle")) return "🚲";
     return "📦";
-
 }

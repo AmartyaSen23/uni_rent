@@ -253,10 +253,10 @@
             
             // 🔄 UPDATED ENDPOINTS
             if (type === 'USER') {
-                // New Endpoint that checks "lenderRated" flag
-                url = `http://localhost:8080/api/items/rate-lender-transaction/${targetItemId}`;
+            // ✅ NEW (Smart - Works on Localhost AND Vercel)
+                url = `${API_BASE}/api/items/rate-lender-transaction/${targetItemId}`;
             } else {
-                url = `http://localhost:8080/api/items/rate-item/${targetItemId}`;
+                url = `${API_BASE}/api/items/rate-item/${targetItemId}`;
             }
 
             const res = await authFetch(url, {
