@@ -470,9 +470,13 @@
     loadItems();
     // CHECK PAYOUT STATUS
     async function checkPayoutStatus() {
+      const token = localStorage.getItem("authToken"); // 🟢 GET TOKEN
         // 1. Get Earnings
         try {
-            const res = await authFetch(`${API_BASE}/api/users/earnings/${currentUserEmail}`);
+            const res = await authFetch(`${API_BASE}/api/users/earnings/${currentUserEmail}`, {
+              method: "GET",
+              headers: { "Authorization": "Bearer " + token } // 🟢 ADD THIS
+            });
             const amount = await res.json();
             // ✅ NEW (Rounds to 2 decimals)
             document.getElementById("walletBalance").innerText = "₹" + Number(amount).toFixed(2);
@@ -483,7 +487,10 @@
 
         // 2. Get UPI ID
         try {
-            const res = await authFetch(`${API_BASE}/api/users/payout-method/${currentUserEmail}`);
+            const res = await authFetch(`${API_BASE}/api/users/payout-method/${currentUserEmail}`, {
+                method: "GET",
+                headers: { "Authorization": "Bearer " + token } // 🟢 ADD THIS
+            });
             if (res.ok) {
                 const upiId = await res.text();
                 if (upiId && upiId.length > 5) {
@@ -793,4 +800,5 @@
   </script>
 
 </body>
+
 </html>
