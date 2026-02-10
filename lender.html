@@ -300,7 +300,7 @@
                     actionHtml = `
                             <div style="margin:10px 0; color:#555; font-size:13px;">
                                 Borrower: <strong>${escapeHtml(item.borrowerName)}</strong><br>
-                                📞 <a href="tel:${escapeHtml(item.lenderPhone)}" style="font-weight:bold; color:#007bff;text-decoration: none;">${escapeHtml(item.lenderPhone || "Not Provided")}</a>
+                                📞 <a href="tel:${escapeHtml(item.borrowerPhone)}" style="font-weight:bold; color:#007bff;text-decoration: none;">${escapeHtml(item.borrowerPhone || "Not Provided")}</a>
                             </div><br>
                             <div style="background:#e8f5e9; padding:5px; margin-top:5px; border:1px solid green; border-radius:5px;">
                                 Return Code: <strong>${escapeHtml(item.returnPasskey)}</strong>
@@ -312,7 +312,7 @@
                     actionHtml = `
                         <div style="margin:10px 0; color:#555; font-size:13px;">
                             Borrower: <strong>${escapeHtml(item.borrowerName)}</strong><br>
-                            📞 <a href="tel:${escapeHtml(item.borrowerPhone)}" style="font-weight:bold; color:#007bff;text-decoration: none;">${escapeHtml(item.lenderPhone || "Not Provided")}</a>
+                            📞 <a href="tel:${escapeHtml(item.borrowerPhone)}" style="font-weight:bold; color:#007bff;text-decoration: none;">${escapeHtml(item.borrowerPhone || "Not Provided")}</a>
                         </div><br>
                         <div style="background:#f8f9fa; padding:10px; border:1px solid #ddd; border-radius:5px; color:#666;">
                             Waiting for borrower to dismiss...
