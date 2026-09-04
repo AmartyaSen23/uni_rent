@@ -116,7 +116,11 @@
 
     <input id="itemName" type="text" placeholder="Item Name (e.g. Cycle)">
     <input id="itemDesc" type="text" placeholder="Description (e.g. Red color)">
-    <input id="itemPrice" type="number" placeholder="Price/day (₹)">
+    <!-- In the Add Item section -->
+    <input id="itemPrice" type="number" placeholder="Price/day (₹)" min="1" max="50000">
+
+    <!-- In the Edit Modal section -->
+    <input type="number" id="editItemPrice" style="width:100%; margin-bottom:20px; box-sizing:border-box;" min="1" max="50000">
     <button class="add" onclick="addItem()">+ Add Item</button>
   </div>
 
@@ -396,6 +400,12 @@
         const image = document.getElementById("base64Output").value;
 
         if (!name || !price) return alert("Fill Name and Price");
+
+        // Add this price validation block
+        const parsedPrice = parseFloat(price);
+        if (parsedPrice < 1 || parsedPrice > 50000) {
+            return alert("⚠️ Please enter a realistic price (between ₹1 and ₹50,000 per day).");
+        }
 
         // 1. Define Object FIRST (Before sending!)
         const newItem = {
@@ -743,9 +753,15 @@
         const name = document.getElementById("editItemName").value;
         const desc = document.getElementById("editItemDesc").value;
         const price = document.getElementById("editItemPrice").value;
-        const newImage = document.getElementById("editBase64Output").value; // Get new image
+        const newImage = document.getElementById("editBase64Output").value; 
 
         if(!name || !price) return alert("Name/Price required");
+
+        // Add this price validation block
+        const parsedPrice = parseFloat(price);
+        if (parsedPrice < 1 || parsedPrice > 50000) {
+            return alert("⚠️ Please enter a realistic price (between ₹1 and ₹50,000 per day).");
+        }
 
         const payload = { 
             name, 
